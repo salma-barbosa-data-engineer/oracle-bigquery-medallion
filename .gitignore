@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.parquet
+dataform/node_modules/
+dataform/.df-credentials.json
