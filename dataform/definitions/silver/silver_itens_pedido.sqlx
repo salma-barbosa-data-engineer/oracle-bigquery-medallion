@@ -1,0 +1,22 @@
+config {
+  type: "table",
+  schema: "silver",
+  description: "Itens de pedido deduplicados, com valor total da linha calculado.",
+  assertions: {
+    uniqueKey: ["item_id"],
+    nonNull: ["item_id", "pedido_id", "produto_id"],
+    rowConditions: ["quantidade > 0", "preco_unitario >= 0"]
+  }
+}
+
+SELECT
+  CAST(id AS INT64)                                        AS item_id,
+  CAST(pedido_id AS INT64)                                 AS pedido_id,
+  CAST(produto_id AS INT64)                                AS produto_id,
+  CAST(quantidade AS INT64)                                AS quantidade,
+  CAST(preco_unitario AS NUMERIC)                          AS preco_unitario,
+  CAST(quantidade AS INT64) * CAST(preco_unitario AS NUMERIC) AS valor_total,
+  updated_at,
+  _ingested_at
+FROM ${ref("bronze", "itens_pedido")}
+QUALIFY ROW_NUMBER() OVER (PARTITION BY id ORDER BY updated_at DESC, _ingested_at DESC) = 1

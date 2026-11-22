@@ -1,0 +1,20 @@
+config {
+  type: "table",
+  schema: "silver",
+  description: "Produtos deduplicados com preço tipado como NUMERIC.",
+  assertions: {
+    uniqueKey: ["produto_id"],
+    nonNull: ["produto_id", "nome", "preco"],
+    rowConditions: ["preco >= 0"]
+  }
+}
+
+SELECT
+  CAST(id AS INT64)       AS produto_id,
+  TRIM(nome)              AS nome,
+  INITCAP(TRIM(categoria)) AS categoria,
+  CAST(preco AS NUMERIC)  AS preco,
+  updated_at,
+  _ingested_at
+FROM ${ref("bronze", "produtos")}
+QUALIFY ROW_NUMBER() OVER (PARTITION BY id ORDER BY updated_at DESC, _ingested_at DESC) = 1

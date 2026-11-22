@@ -1,0 +1,26 @@
+config {
+  type: "table",
+  schema: "silver",
+  description: "Clientes deduplicados (versão mais recente de cada id), com textos padronizados.",
+  columns: {
+    cliente_id: "Identificador do cliente no sistema de origem",
+    email: "E-mail em minúsculas",
+    uf: "Sigla do estado em maiúsculas"
+  },
+  assertions: {
+    uniqueKey: ["cliente_id"],
+    nonNull: ["cliente_id", "nome"]
+  }
+}
+
+SELECT
+  CAST(id AS INT64)           AS cliente_id,
+  INITCAP(TRIM(nome))         AS nome,
+  LOWER(TRIM(email))          AS email,
+  TRIM(cidade)                AS cidade,
+  UPPER(TRIM(uf))             AS uf,
+  created_at,
+  updated_at,
+  _ingested_at
+FROM ${ref("bronze", "clientes")}
+QUALIFY ROW_NUMBER() OVER (PARTITION BY id ORDER BY updated_at DESC, _ingested_at DESC) = 1

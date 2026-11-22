@@ -1,0 +1,27 @@
+config {
+  type: "table",
+  schema: "gold",
+  description: "Receita, itens vendidos e participação na receita por categoria de produto.",
+  assertions: {
+    uniqueKey: ["categoria"]
+  }
+}
+
+WITH vendas AS (
+  SELECT
+    pr.categoria,
+    i.quantidade,
+    i.valor_total
+  FROM ${ref("silver_itens_pedido")} AS i
+  JOIN ${ref("silver_pedidos")}  AS p  USING (pedido_id)
+  JOIN ${ref("silver_produtos")} AS pr USING (produto_id)
+  WHERE p.status != 'CANCELADO'
+)
+
+SELECT
+  categoria,
+  SUM(quantidade)                                             AS qtd_itens,
+  ROUND(SUM(valor_total), 2)                                  AS receita,
+  ROUND(SAFE_DIVIDE(SUM(valor_total), SUM(SUM(valor_total)) OVER ()) * 100, 1) AS pct_receita
+FROM vendas
+GROUP BY categoria

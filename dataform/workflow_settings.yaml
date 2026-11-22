@@ -1,0 +1,5 @@
+defaultProject: seu-projeto-gcp
+defaultLocation: US
+defaultDataset: silver
+defaultAssertionDataset: assertions
+dataformCoreVersion: 3.0.0

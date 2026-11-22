@@ -1,0 +1,21 @@
+config {
+  type: "table",
+  schema: "silver",
+  description: "Pedidos deduplicados; status padronizado e data do pedido separada para análises diárias.",
+  assertions: {
+    uniqueKey: ["pedido_id"],
+    nonNull: ["pedido_id", "cliente_id", "data_pedido", "status"],
+    rowConditions: ["status IN ('PAGO', 'ENVIADO', 'ENTREGUE', 'CANCELADO')"]
+  }
+}
+
+SELECT
+  CAST(id AS INT64)          AS pedido_id,
+  CAST(cliente_id AS INT64)  AS cliente_id,
+  DATE(data_pedido)          AS data_pedido,
+  data_pedido                AS data_hora_pedido,
+  UPPER(TRIM(status))        AS status,
+  updated_at,
+  _ingested_at
+FROM ${ref("bronze", "pedidos")}
+QUALIFY ROW_NUMBER() OVER (PARTITION BY id ORDER BY updated_at DESC, _ingested_at DESC) = 1

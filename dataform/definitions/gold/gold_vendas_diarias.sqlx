@@ -1,0 +1,25 @@
+config {
+  type: "table",
+  schema: "gold",
+  description: "Indicadores de vendas por dia (pedidos cancelados ficam de fora).",
+  bigquery: {
+    partitionBy: "data_pedido"
+  },
+  assertions: {
+    uniqueKey: ["data_pedido"],
+    rowConditions: ["receita >= 0"]
+  }
+}
+
+SELECT
+  p.data_pedido,
+  COUNT(DISTINCT p.pedido_id)                                AS qtd_pedidos,
+  COUNT(DISTINCT p.cliente_id)                               AS qtd_clientes,
+  SUM(i.quantidade)                                          AS qtd_itens,
+  ROUND(SUM(i.valor_total), 2)                               AS receita,
+  ROUND(SAFE_DIVIDE(SUM(i.valor_total), COUNT(DISTINCT p.pedido_id)), 2) AS ticket_medio
+FROM ${ref("silver_pedidos")} AS p
+JOIN ${ref("silver_itens_pedido")} AS i
+  USING (pedido_id)
+WHERE p.status != 'CANCELADO'
+GROUP BY p.data_pedido
